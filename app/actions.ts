@@ -581,3 +581,19 @@ export async function deleteSNSAsset(postId: string) {
     revalidatePath('/admin/inbox'); // Refresh admin inbox
     return { success: true };
 }
+
+export async function getUserNameByEmpId(empId: string) {
+    const session = await auth();
+    if (!session || !['office_admin', 'safety_admin'].includes(session.user.role)) {
+        return { error: 'Unauthorized' };
+    }
+
+    await dbConnect();
+    const user = await User.findOne({ empId }).select('name');
+
+    if (user) {
+        return { name: user.name };
+    } else {
+        return { error: '該当者なし' };
+    }
+}

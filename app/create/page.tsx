@@ -5,6 +5,7 @@ import { createPost } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Loader2, Camera, Send, ArrowLeft } from 'lucide-react';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 import Link from 'next/link';
 
 export default function CreatePostPage() {
@@ -12,6 +13,19 @@ export default function CreatePostPage() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [fileName, setFileName] = useState<string | null>(null);
+    const [content, setContent] = useState('');
+
+    // Voice Input Hook
+    const { isListening, isSupported, startListening, error: voiceError } = useVoiceInput((text) => {
+        setContent(prev => prev + (prev ? ' ' : '') + text);
+    });
+
+    // Handle voice error display (using toast)
+    if (voiceError) {
+        // toast(voiceError, 'error'); // Can cause infinite loop if not careful, better to just log or show once
+        // For now, let's just log
+        console.error(voiceError);
+    }
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
@@ -28,7 +42,14 @@ export default function CreatePostPage() {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setFileName(e.target.files[0].name);
+            const file = e.target.files[0];
+            if (file.size > 10 * 1024 * 1024) { // 10MB
+                alert('画像サイズが大きすぎます（10MB以下にしてください）');
+                e.target.value = '';
+                setFileName(null);
+                return;
+            }
+            setFileName(file.name);
         } else {
             setFileName(null);
         }
@@ -73,13 +94,27 @@ export default function CreatePostPage() {
                 {/* Content */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">本文 <span className="text-red-500">*</span></label>
-                    <textarea
-                        name="content"
-                        required
-                        rows={5}
-                        className="w-full rounded-lg border border-gray-300 p-3"
-                        placeholder="詳細を入力してください..."
-                    />
+                    <div className="relative">
+                        <textarea
+                            name="content"
+                            required
+                            rows={5}
+                            className="w-full rounded-lg border border-gray-300 p-3"
+                            placeholder="詳細を入力してください..."
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                        />
+                        {isSupported && (
+                            <button
+                                type="button"
+                                onClick={startListening}
+                                className={`absolute right-2 bottom-2 p-2 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                title="音声入力"
+                            >
+                                <div className={`w-4 h-4 rounded-full ${isListening ? 'bg-red-500' : 'bg-current'}`} style={{ maskImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z\'/%3E%3Cpath d=\'M19 10v2a7 7 0 0 1-14 0v-2\'/%3E%3Cline x1=\'12\' y1=\'19\' x2=\'12\' y2=\'23\'/%3E%3Cline x1=\'8\' y1=\'23\' x2=\'16\' y2=\'23\'/%3E%3C/svg%3E")', maskSize: 'contain', WebkitMaskImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z\'/%3E%3Cpath d=\'M19 10v2a7 7 0 0 1-14 0v-2\'/%3E%3Cline x1=\'12\' y1=\'19\' x2=\'12\' y2=\'23\'/%3E%3Cline x1=\'8\' y1=\'23\' x2=\'16\' y2=\'23\'/%3E%3C/svg%3E")', WebkitMaskSize: 'contain', backgroundColor: 'currentColor' }} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Image Upload */}

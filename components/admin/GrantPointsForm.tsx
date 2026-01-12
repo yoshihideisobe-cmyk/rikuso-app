@@ -7,14 +7,31 @@ import { Loader2, Coins, UserCheck } from 'lucide-react';
 export default function GrantPointsForm() {
     // For MVP, simple ID input. Ideal: User Search/Select
     const [empId, setEmpId] = useState('');
+    const [empName, setEmpName] = useState<string | null>(null);
     const [amount, setAmount] = useState('100');
     const [reason, setReason] = useState('安全運転報奨');
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'loading'; message: string } | null>(null);
 
-    // Note: To make this robust, we need to lookup User ID by EmpID. 
-    // Since grantPoints takes userId (ObjectId), but admin knows EmpID.
-    // I will add a helper in actions or just pass EmpID to grantPoints and let it resolve.
-    // Let's modify grantPoints to take EmpID for convenience.
+    // Fetch user name on blur
+    const handleEmpIdBlur = async () => {
+        if (!empId) {
+            setEmpName(null);
+            return;
+        }
+
+        // Import action dynamically or use from top level if already imported
+        try {
+            const { getUserNameByEmpId } = await import('@/app/actions');
+            const result = await getUserNameByEmpId(empId);
+            if (result.name) {
+                setEmpName(result.name);
+            } else {
+                setEmpName('該当者なし');
+            }
+        } catch (e) {
+            setEmpName('エラー');
+        }
+    };
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -24,8 +41,9 @@ export default function GrantPointsForm() {
         if (result.error) {
             setStatus({ type: 'error', message: result.error });
         } else {
-            setStatus({ type: 'success', message: `${empId} さんに ${amount}pt 付与しました` });
+            setStatus({ type: 'success', message: `${empName || empId} さんに ${amount}pt 付与しました` });
             setEmpId('');
+            setEmpName(null);
         }
     }
 
@@ -44,10 +62,16 @@ export default function GrantPointsForm() {
                             type="text"
                             value={empId}
                             onChange={e => setEmpId(e.target.value)}
+                            onBlur={handleEmpIdBlur}
                             className="w-full p-2 border rounded"
                             placeholder="例: D001"
                             required
                         />
+                        {empName && (
+                            <p className={`text-xs mt-1 ${empName.includes('なし') || empName === 'エラー' ? 'text-red-500' : 'text-blue-600 font-bold'}`}>
+                                {empName}
+                            </p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-gray-500 mb-1">ポイント数</label>

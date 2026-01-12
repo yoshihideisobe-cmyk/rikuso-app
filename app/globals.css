@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Force Light Mode inputs to avoid Dark Mode readability issues */
+input, textarea, select {
+  background-color: #ffffff;
+  color: #111827; /* gray-900 */
+  border-color: #d1d5db; /* gray-300 */
+}
+
+input::placeholder, textarea::placeholder {
+  color: #9ca3af; /* gray-400 */
+}
