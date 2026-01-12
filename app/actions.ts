@@ -78,7 +78,9 @@ export async function createPost(formData: FormData) {
 内容: ${content}
     `.trim();
 
+    console.log('--- メール送信開始 (CreatePost) ---');
     await sendAdminNotification(subject, mailContent);
+    console.log('--- メール送信終了 (CreatePost) ---');
 
     revalidatePath('/');
     return { success: true, status };
@@ -481,10 +483,12 @@ export async function createChangeRequest(siteId: string, requestedChanges: stri
         return { error: '修正依頼の送信に失敗しました' };
     }
 
+    console.log('--- メール送信開始 (ChangeRequest) ---');
     await sendAdminNotification(
         '【陸送アプリ】新しい申請/報告が届きました',
         `修正依頼 (納車先ID: ${siteId})\n申請者: ${session.user.name} (${session.user.empId})\n内容: ${requestedChanges}`
     );
+    console.log('--- メール送信終了 (ChangeRequest) ---');
 
     return { success: true };
 }
@@ -579,10 +583,12 @@ export async function uploadSNSAsset(formData: FormData) {
         images: imageUrl ? [imageUrl] : []
     });
 
+    console.log('--- メール送信開始 (SNSAsset) ---');
     await sendAdminNotification(
         '【陸送アプリ】新しい写真が投稿されました',
         `社員ID: ${session.user.empId} の ${session.user.name} さんが新しい写真をアップロードしました。\n\nコメント: ${comment || '(なし)'}`
     );
+    console.log('--- メール送信終了 (SNSAsset) ---');
 
     return { success: true };
 }

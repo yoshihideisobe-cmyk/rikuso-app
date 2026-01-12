@@ -5,11 +5,13 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'onboarding@resend.dev'; // Defau
 
 export async function sendAdminNotification(subject: string, content: string) {
     if (!resend) {
-        console.warn('RESEND_API_KEY is not set. Skipping email notification.');
+        console.warn('--- EMAIL SKIPPED: RESEND_API_KEY is missing ---');
+        console.warn('Check your .env.local file. Admin Email:', ADMIN_EMAIL);
         return;
     }
 
     try {
+        console.log(`Attempting to send email to ${ADMIN_EMAIL}...`);
         const { data, error } = await resend.emails.send({
             from: 'onboarding@resend.dev', // Use a verified domain in production
             to: ADMIN_EMAIL,
@@ -18,11 +20,14 @@ export async function sendAdminNotification(subject: string, content: string) {
         });
 
         if (error) {
-            console.error('Failed to send email:', error);
+            console.error('--- EMAIL FAILED ---');
+            console.error(error);
         } else {
-            console.log('Email sent successfully:', data?.id);
+            console.log('--- EMAIL SENT SUCCESS ---');
+            console.log('ID:', data?.id);
         }
     } catch (e) {
-        console.error('Unexpected error sending email:', e);
+        console.error('--- EMAIL EXCEPTION ---');
+        console.error(e);
     }
 }
