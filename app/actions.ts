@@ -6,6 +6,7 @@ import Post, { IPost } from '@/models/Post';
 import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { sendAdminNotification } from '@/lib/mail';
 
 export async function createPost(formData: FormData) {
     const session = await auth();
@@ -64,6 +65,20 @@ export async function createPost(formData: FormData) {
         console.error('Failed to create post:', error);
         return { error: 'Failed to create post' };
     }
+
+    // Email Notification
+    const subject = type === 'traffic'
+        ? '【陸送アプリ】掲示板に投稿がありました'
+        : '【陸送アプリ】新しい申請/報告が届きました';
+
+    const mailContent = `
+投稿者: ${session.user.name} (${session.user.empId})
+種別: ${type}
+タイトル: ${title || '(なし)'}
+内容: ${content}
+    `.trim();
+
+    await sendAdminNotification(subject, mailContent);
 
     revalidatePath('/');
     return { success: true, status };
@@ -463,9 +478,13 @@ export async function createChangeRequest(siteId: string, requestedChanges: stri
             status: 'open'
         });
     } catch (e) {
-        console.error(e);
         return { error: '修正依頼の送信に失敗しました' };
     }
+
+    await sendAdminNotification(
+        '【陸送アプリ】新しい申請/報告が届きました',
+        `修正依頼 (納車先ID: ${siteId})\n申請者: ${session.user.name} (${session.user.empId})\n内容: ${requestedChanges}`
+    );
 
     return { success: true };
 }
@@ -559,6 +578,11 @@ export async function uploadSNSAsset(formData: FormData) {
         status: 'pending',
         images: imageUrl ? [imageUrl] : []
     });
+
+    await sendAdminNotification(
+        '【陸送アプリ】新しい写真が投稿されました',
+        `社員ID: ${session.user.empId} の ${session.user.name} さんが新しい写真をアップロードしました。\n\nコメント: ${comment || '(なし)'}`
+    );
 
     return { success: true };
 }
