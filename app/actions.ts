@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { sendAdminNotification } from '@/lib/mail';
+import { after } from 'next/server';
 
 export async function createPost(formData: FormData) {
     const session = await auth();
@@ -78,9 +79,12 @@ export async function createPost(formData: FormData) {
 内容: ${content}
     `.trim();
 
-    console.log('--- メール送信開始 (CreatePost) ---');
-    await sendAdminNotification(subject, mailContent);
-    console.log('--- メール送信終了 (CreatePost) ---');
+    console.log('--- メール送信スケジュール (CreatePost) ---');
+    after(async () => {
+        console.log('--- メール送信開始 (CreatePost Async) ---');
+        await sendAdminNotification(subject, mailContent).catch(e => console.error(e));
+        console.log('--- メール送信終了 (CreatePost Async) ---');
+    });
 
     revalidatePath('/');
     return { success: true, status };
@@ -220,6 +224,25 @@ export async function createTrafficPost(formData: FormData) {
     return { success: true };
 }
 
+export async function deletePost(postId: string) {
+    const session = await auth();
+    if (!session || !['office_admin', 'safety_admin'].includes(session.user.role)) {
+        return { error: 'Unauthorized' };
+    }
+
+    await dbConnect();
+
+    try {
+        await Post.findByIdAndDelete(postId);
+    } catch (e) {
+        console.error('Failed to delete post:', e);
+        return { error: '削除に失敗しました' };
+    }
+
+    revalidatePath('/');
+    return { success: true };
+}
+
 export async function getTimelinePosts() {
     const session = await auth();
     if (!session) return [];
@@ -233,6 +256,7 @@ export async function getTimelinePosts() {
         expiresAt: { $gt: new Date() }, // Check expiration if consistent with logic, or remove if not all have expiration
     })
         .sort({ createdAt: -1 })
+        .limit(30)
         .populate('authorId', 'name role')
         .lean();
 
@@ -483,12 +507,15 @@ export async function createChangeRequest(siteId: string, requestedChanges: stri
         return { error: '修正依頼の送信に失敗しました' };
     }
 
-    console.log('--- メール送信開始 (ChangeRequest) ---');
-    await sendAdminNotification(
-        '【陸送アプリ】新しい申請/報告が届きました',
-        `修正依頼 (納車先ID: ${siteId})\n申請者: ${session.user.name} (${session.user.empId})\n内容: ${requestedChanges}`
-    );
-    console.log('--- メール送信終了 (ChangeRequest) ---');
+    console.log('--- メール送信スケジュール (ChangeRequest) ---');
+    after(async () => {
+        console.log('--- メール送信開始 (ChangeRequest Async) ---');
+        await sendAdminNotification(
+            '【陸送アプリ】新しい申請/報告が届きました',
+            `修正依頼 (納車先ID: ${siteId})\n申請者: ${session.user.name} (${session.user.empId})\n内容: ${requestedChanges}`
+        ).catch(e => console.error(e));
+        console.log('--- メール送信終了 (ChangeRequest Async) ---');
+    });
 
     return { success: true };
 }
@@ -583,12 +610,15 @@ export async function uploadSNSAsset(formData: FormData) {
         images: imageUrl ? [imageUrl] : []
     });
 
-    console.log('--- メール送信開始 (SNSAsset) ---');
-    await sendAdminNotification(
-        '【陸送アプリ】新しい写真が投稿されました',
-        `社員ID: ${session.user.empId} の ${session.user.name} さんが新しい写真をアップロードしました。\n\nコメント: ${comment || '(なし)'}`
-    );
-    console.log('--- メール送信終了 (SNSAsset) ---');
+    console.log('--- メール送信スケジュール (SNSAsset) ---');
+    after(async () => {
+        console.log('--- メール送信開始 (SNSAsset Async) ---');
+        await sendAdminNotification(
+            '【陸送アプリ】新しい写真が投稿されました',
+            `社員ID: ${session.user.empId} の ${session.user.name} さんが新しい写真をアップロードしました。\n\nコメント: ${comment || '(なし)'}\n\n※写真は管理画面で確認してください。`
+        ).catch(e => console.error(e));
+        console.log('--- メール送信終了 (SNSAsset Async) ---');
+    });
 
     return { success: true };
 }

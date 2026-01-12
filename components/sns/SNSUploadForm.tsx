@@ -4,8 +4,10 @@ import { uploadSNSAsset } from '@/app/actions';
 import { useState } from 'react';
 import { Loader2, Send, Instagram, Mic } from 'lucide-react';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useToast } from '@/components/ui/ToastProvider';
 
 export default function SNSUploadForm() {
+    const { toast } = useToast();
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'loading'; message: string } | null>(null);
     const [comment, setComment] = useState('');
 
@@ -37,8 +39,10 @@ export default function SNSUploadForm() {
 
         if (result?.error) {
             setStatus({ type: 'error', message: result.error });
+            toast(result.error, 'error');
         } else {
             setStatus({ type: 'success', message: '送信しました。事務所が確認します。' });
+            toast('送信しました', 'success');
             setComment('');
             // Reset form file input manually if needed, or rely on browser
             const form = document.querySelector('form') as HTMLFormElement;
@@ -113,11 +117,7 @@ export default function SNSUploadForm() {
                 </button>
             </form>
 
-            {status && status.type !== 'loading' && (
-                <p className={`mt-3 text-sm ${status.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                    {status.message}
-                </p>
-            )}
+            <span className="hidden text-green-600 text-red-600" /> {/* Prevent purge of dynamic classes just in case */}
         </div>
     );
 }
