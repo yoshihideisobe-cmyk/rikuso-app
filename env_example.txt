@@ -1,0 +1,11 @@
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/rikuso-app?retryWrites=true&w=majority
+NEXTAUTH_SECRET=changeme_openssl_rand_base64_32
+NEXTAUTH_URL=http://localhost:3000
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Resend
+RESEND_API_KEY=
