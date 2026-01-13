@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useRouter } from 'next/navigation';
+import imageCompression from 'browser-image-compression';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -38,7 +39,33 @@ export default function SafetyForm() {
     async function clientAction(formData: FormData) {
         formData.set('type', reportType);
 
-        const result = await createSafetyReport(formData);
+        const file = formData.get('image') as File;
+        let uploadData = formData;
+
+        if (file && file.size > 0 && file.type.startsWith('image/')) {
+            try {
+                const options = {
+                    maxSizeMB: 3.5,
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true,
+                };
+                const compressedFile = await imageCompression(file, options);
+
+                // Need to reconstruct FormData to replace 'image'
+                // Since we can't easily iterate and replace in place cleanly in all cases,
+                // we'll clone.
+                const newFormData = new FormData();
+                formData.forEach((value, key) => {
+                    if (key !== 'image') newFormData.append(key, value);
+                });
+                newFormData.append('image', compressedFile, file.name);
+                uploadData = newFormData;
+            } catch (error) {
+                console.error('Compression failed:', error);
+            }
+        }
+
+        const result = await createSafetyReport(uploadData);
 
         if (result?.error) {
             toast(result.error, 'error');

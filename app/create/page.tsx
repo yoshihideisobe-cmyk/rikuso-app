@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { Loader2, Camera, Send, ArrowLeft } from 'lucide-react';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import Link from 'next/link';
+import imageCompression from 'browser-image-compression';
 
 export default function CreatePostPage() {
     const router = useRouter();
@@ -29,7 +30,31 @@ export default function CreatePostPage() {
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
-        const result = await createPost(formData);
+
+        const file = formData.get('image') as File;
+        let uploadData = formData;
+
+        if (file && file.size > 0 && file.type.startsWith('image/')) {
+            try {
+                const options = {
+                    maxSizeMB: 3.5,
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true,
+                };
+                const compressedFile = await imageCompression(file, options);
+
+                const newFormData = new FormData();
+                formData.forEach((value, key) => {
+                    if (key !== 'image') newFormData.append(key, value);
+                });
+                newFormData.append('image', compressedFile, file.name);
+                uploadData = newFormData;
+            } catch (error) {
+                console.error('Compression failed:', error);
+            }
+        }
+
+        const result = await createPost(uploadData);
 
         if (result?.error) {
             toast(result.error, 'error');

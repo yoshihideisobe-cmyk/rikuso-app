@@ -6,6 +6,7 @@ import { useFormStatus } from 'react-dom';
 import { Loader2, Send, Instagram, Mic } from 'lucide-react';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useToast } from '@/components/ui/ToastProvider';
+import imageCompression from 'browser-image-compression';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -50,15 +51,42 @@ export default function SNSUploadForm() {
     async function handleSubmit(formData: FormData) {
         setStatus(null); // Clear previous status
 
-        // Manual file size check (Client-side)
+        // Manual file size check (Client-side) - Initial check before compression
         const file = formData.get('image') as File;
-        if (file && file.size > 10 * 1024 * 1024) { // 10MB
-            setStatus({ type: 'error', message: '画像サイズが大きすぎます（10MB以下にしてください）' });
+        if (file && file.size > 20 * 1024 * 1024) { // 20MB limit for raw file (higher than before since we compress)
+            setStatus({ type: 'error', message: '元の画像サイズが大きすぎます（20MB以下にしてください）' });
             toast('画像サイズが大きすぎます', 'error');
             return;
         }
 
-        const result = await uploadSNSAsset(formData);
+        // Compression
+        let uploadData = formData;
+        if (file && file.size > 0 && file.type.startsWith('image/')) {
+            try {
+                const options = {
+                    maxSizeMB: 3.5, // 4.5MB limit on Vercel
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true,
+                };
+                const compressedFile = await imageCompression(file, options);
+
+                // Create new FormData with compressed file
+                const newFormData = new FormData();
+                // Copy other fields
+                formData.forEach((value, key) => {
+                    if (key !== 'image') newFormData.append(key, value);
+                });
+                newFormData.append('image', compressedFile, file.name);
+                uploadData = newFormData;
+            } catch (error) {
+                console.error('Compression ended with error:', error);
+                // Continue with original file if compression fails, or return error?
+                // Depending on severity, we might try to upload original but risk 413.
+                // Let's log and try original.
+            }
+        }
+
+        const result = await uploadSNSAsset(uploadData);
 
         if (result?.error) {
             setStatus({ type: 'error', message: result.error });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { deleteSNSAsset } from '@/app/actions';
 import { Trash2, Loader2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastProvider';
@@ -23,30 +23,33 @@ export default function SNSAssetCard({ asset }: SNSAssetCardProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [isVisible, setIsVisible] = useState(true);
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [isPending, startTransition] = useTransition(); // Actions/Refresh transition
+    const [isLocalDeleting, setIsLocalDeleting] = useState(false); // Immediate local loading state
 
     const handleDelete = async () => {
         if (!confirm('この素材を削除してもよろしいですか？')) return;
 
         // Optimistic UI update: Hide immediately
         setIsVisible(false);
-        setIsDeleting(true);
+        setIsLocalDeleting(true);
 
         try {
             const res = await deleteSNSAsset(asset._id);
 
             if (res.success) {
                 toast('削除しました', 'success');
-                router.refresh();
+                startTransition(() => {
+                    router.refresh();
+                });
             } else {
                 // Revert on failure
                 setIsVisible(true);
-                setIsDeleting(false);
+                setIsLocalDeleting(false);
                 toast('削除に失敗しました', 'error');
             }
         } catch (e) {
             setIsVisible(true);
-            setIsDeleting(false);
+            setIsLocalDeleting(false);
             toast('エラーが発生しました', 'error');
         }
     };
@@ -73,11 +76,11 @@ export default function SNSAssetCard({ asset }: SNSAssetCardProps) {
             <div className="absolute top-0 left-0 w-full p-2 flex justify-between bg-gradient-to-b from-black/50 to-transparent">
                 <button
                     onClick={handleDelete}
-                    disabled={isDeleting}
+                    disabled={isLocalDeleting || isPending}
                     className="bg-white/90 p-1.5 rounded-full text-red-600 hover:text-red-700 hover:bg-white transition-colors shadow-sm disabled:opacity-50"
                     title="削除"
                 >
-                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    {isLocalDeleting || isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
 
                 {asset.images && asset.images.length > 0 && (
