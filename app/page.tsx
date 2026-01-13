@@ -5,6 +5,8 @@ import TrafficTimeline from '@/components/traffic/TrafficTimeline';
 import NoticeBoard from '@/components/traffic/NoticeBoard';
 import Link from 'next/link';
 import { getPendingPosts } from '@/app/actions';
+import { Suspense } from 'react';
+import { TimelineSkeleton, CardSkeleton } from '@/components/skeletons';
 
 export default async function Home() {
   const session = await auth();
@@ -43,7 +45,9 @@ export default async function Home() {
 
       {/* Content */}
       <div className="p-4 max-w-lg mx-auto space-y-8">
-        <NoticeBoard />
+        <Suspense fallback={<CardSkeleton />}>
+          <NoticeBoard />
+        </Suspense>
 
         {isAdmin && pendingPosts.length > 0 && (
           <Link
@@ -62,7 +66,9 @@ export default async function Home() {
 
         <div>
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">みんなの投稿 (Timeline)</h2>
-          <TrafficTimeline />
+          <Suspense fallback={<TimelineSkeleton />}>
+            <TrafficTimeline />
+          </Suspense>
         </div>
 
         {['office_admin', 'safety_admin'].includes(session.user.role) && (

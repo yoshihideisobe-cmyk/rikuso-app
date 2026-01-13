@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { sendAdminNotification } from '@/lib/mail';
 import { after } from 'next/server';
+import { put } from '@vercel/blob';
 
 export async function createPost(formData: FormData) {
     const session = await auth();
@@ -30,12 +31,14 @@ export async function createPost(formData: FormData) {
     let imageUrl = '';
     if (imageFile && imageFile.size > 0) {
         try {
-            const arrayBuffer = await imageFile.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            imageUrl = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+            const blob = await put(imageFile.name, imageFile, {
+                access: 'public',
+                addRandomSuffix: true
+            });
+            imageUrl = blob.url;
         } catch (e) {
-            console.error('Image processing failed:', e);
-            return { error: '画像の処理に失敗しました' };
+            console.error('Image upload failed:', e);
+            return { error: '画像のアップロードに失敗しました' };
         }
     }
 
@@ -310,13 +313,14 @@ export async function createSafetyReport(formData: FormData) {
     let imageUrl = '';
     if (imageFile && imageFile.size > 0) {
         try {
-            // MVP: Convert to Base64
-            const arrayBuffer = await imageFile.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            imageUrl = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+            const blob = await put(imageFile.name, imageFile, {
+                access: 'public',
+                addRandomSuffix: true
+            });
+            imageUrl = blob.url;
         } catch (e) {
-            console.error('Image processing failed:', e);
-            return { error: '画像の処理に失敗しました' };
+            console.error('Image upload failed:', e);
+            return { error: '画像のアップロードに失敗しました' };
         }
     }
 
@@ -592,13 +596,14 @@ export async function uploadSNSAsset(formData: FormData) {
     let imageUrl = '';
     if (imageFile && imageFile.size > 0) {
         try {
-            // MVP: Convert to Base64
-            const arrayBuffer = await imageFile.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            imageUrl = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+            const blob = await put(imageFile.name, imageFile, {
+                access: 'public',
+                addRandomSuffix: true
+            });
+            imageUrl = blob.url;
         } catch (e) {
-            console.error('Image processing failed:', e);
-            return { error: '画像の処理に失敗しました' };
+            console.error('Image upload failed:', e);
+            return { error: '画像のアップロードに失敗しました' };
         }
     }
 
