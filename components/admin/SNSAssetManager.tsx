@@ -39,7 +39,7 @@ export default async function SNSAssetManager() {
                             </div>
 
                             {/* Actions Overlay */}
-                            <div className="absolute top-0 left-0 w-full p-2 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute top-0 left-0 w-full p-2 flex justify-between bg-gradient-to-b from-black/50 to-transparent">
                                 <DeleteSNSAssetButton postId={asset._id.toString()} />
 
                                 {asset.images && asset.images.length > 0 && (
@@ -48,7 +48,8 @@ export default async function SNSAssetManager() {
                                         download
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="bg-white/80 p-1.5 rounded-full text-gray-700 hover:text-blue-600 hover:bg-white"
+                                        className="bg-white/90 p-1.5 rounded-full text-gray-700 hover:text-blue-600 hover:bg-white transition-colors shadow-sm"
+                                        title="ダウンロード"
                                     >
                                         <Download className="w-4 h-4" />
                                     </a>

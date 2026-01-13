@@ -1,15 +1,41 @@
 'use client';
 
 import { uploadSNSAsset } from '@/app/actions';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2, Send, Instagram, Mic } from 'lucide-react';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useToast } from '@/components/ui/ToastProvider';
 
+function SubmitButton() {
+    const { pending } = useFormStatus();
+
+    return (
+        <button
+            type="submit"
+            disabled={pending}
+            className="w-full bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transition-colors"
+        >
+            {pending ? (
+                <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    送信中...
+                </>
+            ) : (
+                <>
+                    <Send className="w-4 h-4 mr-2" />
+                    送信する
+                </>
+            )}
+        </button>
+    );
+}
+
 export default function SNSUploadForm() {
     const { toast } = useToast();
-    const [status, setStatus] = useState<{ type: 'success' | 'error' | 'loading'; message: string } | null>(null);
+    const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [comment, setComment] = useState('');
+    const formRef = useRef<HTMLFormElement>(null);
 
     // Voice Input Hook
     const { isListening, isSupported, startListening, error: voiceError } = useVoiceInput((text) => {
@@ -22,19 +48,16 @@ export default function SNSUploadForm() {
     }
 
     async function handleSubmit(formData: FormData) {
-        // Enforce comment from state to form data if necessary, or just rely on textarea name="comment"
-        // But since we use state for comment (for voice input), we should make sure textarea syncs
+        setStatus(null); // Clear previous status
 
-        // Client-side size check is hard with just action={handleSubmit} without custom event or controlled input
-        // But we can check inside this function if we extract the file from formData
+        // Manual file size check (Client-side)
         const file = formData.get('image') as File;
         if (file && file.size > 10 * 1024 * 1024) { // 10MB
-            alert('画像サイズが大きすぎます（10MB以下にしてください）');
             setStatus({ type: 'error', message: '画像サイズが大きすぎます（10MB以下にしてください）' });
+            toast('画像サイズが大きすぎます', 'error');
             return;
         }
 
-        setStatus({ type: 'loading', message: 'アップロード中...' });
         const result = await uploadSNSAsset(formData);
 
         if (result?.error) {
@@ -44,9 +67,8 @@ export default function SNSUploadForm() {
             setStatus({ type: 'success', message: '送信しました。事務所が確認します。' });
             toast('送信しました', 'success');
             setComment('');
-            // Reset form file input manually if needed, or rely on browser
-            const form = document.querySelector('form') as HTMLFormElement;
-            form?.reset();
+            // Reset form (clears file input)
+            formRef.current?.reset();
         }
     }
 
@@ -72,7 +94,7 @@ export default function SNSUploadForm() {
                 事務所で加工してInstagram等にアップします。
             </p>
 
-            <form action={handleSubmit} className="space-y-4">
+            <form ref={formRef} action={handleSubmit} className="space-y-4">
                 <div className="relative">
                     <textarea
                         name="comment"
@@ -108,13 +130,7 @@ export default function SNSUploadForm() {
                         hover:file:bg-pink-100"
                 />
 
-                <button
-                    type="submit"
-                    disabled={status?.type === 'loading'}
-                    className="w-full bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 disabled:opacity-50 flex justify-center items-center"
-                >
-                    {status?.type === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : "送信する"}
-                </button>
+                <SubmitButton />
             </form>
 
             <span className="hidden text-green-600 text-red-600" /> {/* Prevent purge of dynamic classes just in case */}
