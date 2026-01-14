@@ -3,7 +3,7 @@
 import { getPendingReports, publishNotice } from '@/app/actions';
 import { useState, useEffect } from 'react';
 import { Loader2, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/ToastProvider'; // Keep existing import path
 
 // Define types based on return from getPendingReports
@@ -109,7 +109,7 @@ export default function AdminInbox() {
                                 )}>
                                     {report.type === 'near_miss' ? 'ヒヤリ' : '納車先'}
                                 </span>
-                                <span className="text-xs text-gray-400">{new Date(report.createdAt).toLocaleString()}</span>
+                                <span className="text-xs text-gray-400">{formatDate(report.createdAt)}</span>
                             </div>
                             <p className="text-sm text-gray-800 mb-2 whitespace-pre-wrap">{report.content}</p>
 

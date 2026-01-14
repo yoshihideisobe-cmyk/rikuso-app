@@ -1,4 +1,5 @@
 import { getNotices } from '@/app/actions';
+import { formatDate } from '@/lib/utils';
 import { Bell } from 'lucide-react';
 
 export default async function NoticeBoard() {
@@ -17,7 +18,7 @@ export default async function NoticeBoard() {
                     <div key={notice._id} className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r shadow-sm">
                         <div className="flex justify-between items-start">
                             <h3 className="font-bold text-gray-800 text-sm">{notice.title}</h3>
-                            <span className="text-xs text-gray-400">{new Date(notice.publishedAt).toLocaleDateString()}</span>
+                            <span className="text-xs text-gray-400">{formatDate(notice.publishedAt)}</span>
                         </div>
                         <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{notice.content}</p>
                     </div>

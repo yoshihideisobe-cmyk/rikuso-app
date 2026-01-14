@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { reviewPost } from '@/app/actions';
 import { Loader2, Check, Eye, FileText, ChevronDown } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastProvider';
+import { formatDate } from '@/lib/utils';
 
 type Post = {
     _id: string;
@@ -73,7 +74,7 @@ export default function AdminPendingList({ initialPosts }: { initialPosts: Post[
                                     <span className="text-xs text-gray-400">{post.authorId.name}</span>
                                 </div>
                                 <div className="text-xs text-gray-400">
-                                    {new Date(post.createdAt).toLocaleDateString()}
+                                    {formatDate(post.createdAt)}
                                 </div>
                             </div>
 

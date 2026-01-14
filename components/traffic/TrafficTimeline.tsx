@@ -1,17 +1,10 @@
 import { Clock, MapPin, User, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
 import { getTimelinePosts } from '@/app/actions';
+import { formatDate } from '@/lib/utils';
 import { auth } from '@/auth';
 import DeletePostButton from './DeletePostButton';
 
-function formatTime(dateString: string) {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ja-JP', {
-        month: 'numeric',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(date);
-}
+
 
 function getTypeLabel(type: string) {
     switch (type) {
@@ -56,7 +49,7 @@ export default async function TrafficTimeline() {
                             </span>
                             <div className="text-xs text-gray-400 flex items-center">
                                 <Clock className="mr-1 h-3 w-3" />
-                                {formatTime(post.createdAt)}
+                                {formatDate(post.createdAt)}
                             </div>
                         </div>
                         <div className="flex items-center gap-2">

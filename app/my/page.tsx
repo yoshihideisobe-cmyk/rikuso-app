@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getMyPoints } from '@/app/actions';
 import { Coins, History, Trophy } from 'lucide-react';
 import SNSUploadForm from '@/components/sns/SNSUploadForm';
+import { formatDate } from '@/lib/utils';
 
 export default async function MyPage() {
     const session = await auth();
@@ -57,7 +58,7 @@ export default async function MyPage() {
                             <div key={item._id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center">
                                 <div>
                                     <p className="font-bold text-gray-800 text-sm">{item.reason}</p>
-                                    <p className="text-xs text-gray-400">{new Date(item.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-xs text-gray-400">{formatDate(item.createdAt)}</p>
                                 </div>
                                 <div className="font-bold text-green-600">+{item.amount}</div>
                             </div>

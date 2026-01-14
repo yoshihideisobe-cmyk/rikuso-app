@@ -1,4 +1,5 @@
 import { auth } from '@/auth';
+import { formatDate } from '@/lib/utils';
 import dbConnect from '@/lib/db';
 import Post from '@/models/Post';
 import SNSAssetCard from './SNSAssetCard';
@@ -26,7 +27,7 @@ export default async function SNSAssetManager() {
                         const asset = {
                             ...rawAsset,
                             _id: rawAsset._id.toString(),
-                            createdAt: new Date(rawAsset.createdAt).toLocaleDateString(),
+                            createdAt: formatDate(rawAsset.createdAt),
                             authorId: rawAsset.authorId ? {
                                 name: rawAsset.authorId.name,
                                 empId: rawAsset.authorId.empId
