@@ -200,12 +200,27 @@ export async function createTrafficPost(formData: FormData) {
 
     const content = formData.get('content') as string;
     const duration = formData.get('duration') as string; // in hours
+    const imageFile = formData.get('image') as File | null;
 
     if (!content) {
         return { error: 'Content is required' };
     }
 
     await dbConnect();
+
+    let imageUrl = '';
+    if (imageFile && imageFile.size > 0) {
+        try {
+            const blob = await put(imageFile.name, imageFile, {
+                access: 'public',
+                addRandomSuffix: true
+            });
+            imageUrl = blob.url;
+        } catch (e) {
+            console.error('Image upload failed:', e);
+            return { error: '画像のアップロードに失敗しました' };
+        }
+    }
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + parseInt(duration || '24'));
@@ -217,6 +232,7 @@ export async function createTrafficPost(formData: FormData) {
             content,
             status: 'approved', // Traffic news is auto-approved
             expiresAt,
+            images: imageUrl ? [imageUrl] : [],
         });
     } catch (error) {
         console.error('Failed to create post:', error);
